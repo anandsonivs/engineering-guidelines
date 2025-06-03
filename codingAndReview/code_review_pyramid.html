@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Review Pyramid - Engineering Guidelines</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .pyramid-section {
+            padding: 40px;
+            text-align: center;
+        }
+
+        .pyramid-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            height: 600px;
+        }
+
+        .pyramid-level {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .pyramid-level:hover {
+            transform: translateX(-50%) scale(1.05);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .level-1 {
+            width: 200px;
+            height: 60px;
+            top: 50px;
+            background: linear-gradient(45deg, #FF6B6B, #FF5252);
+        }
+
+        .level-2 {
+            width: 300px;
+            height: 80px;
+            top: 140px;
+            background: linear-gradient(45deg, #4ECDC4, #26A69A);
+        }
+
+        .level-3 {
+            width: 400px;
+            height: 100px;
+            top: 250px;
+            background: linear-gradient(45deg, #45B7D1, #2196F3);
+        }
+
+        .level-4 {
+            width: 500px;
+            height: 120px;
+            top: 380px;
+            background: linear-gradient(45deg, #96CEB4, #4CAF50);
+        }
+
+        .level-5 {
+            width: 600px;
+            height: 140px;
+            top: 530px;
+            background: linear-gradient(45deg, #FFEAA7, #FDCB6E);
+        }
+
+        .automation-indicators {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .human-focus {
+            background: #FF6B6B;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 25px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(255,107,107,0.3);
+        }
+
+        .automation-ready {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(76,175,80,0.3);
+        }
+
+        .details-panel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 400px;
+            height: 100vh;
+            background: white;
+            box-shadow: -5px 0 20px rgba(0,0,0,0.1);
+            transition: right 0.3s ease;
+            overflow-y: auto;
+            z-index: 1000;
+            padding: 30px;
+        }
+
+        .details-panel.active {
+            right: 0;
+        }
+
+        .close-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #FF6B6B;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        .practices-section {
+            padding: 40px;
+            background: #f8f9fa;
+        }
+
+        .practices-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .practices-table th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .practices-table td {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            vertical-align: top;
+        }
+
+        .practices-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .practice-category {
+            background: #4CAF50 !important;
+            color: white !important;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .code-example {
+            background: #f4f4f4;
+            border-left: 4px solid #4CAF50;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+
+        @media (max-width: 768px) {
+            .pyramid-container {
+                height: 500px;
+            }
+            
+            .level-1, .level-2, .level-3, .level-4, .level-5 {
+                width: 80%;
+                height: 50px;
+                font-size: 0.9em;
+            }
+
+            .automation-indicators {
+                position: static;
+                transform: none;
+                margin-top: 20px;
+            }
+
+            .details-panel {
+                width: 100%;
+                right: -100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 The Code Review Pyramid</h1>
+            <p>Engineering Excellence Through Structured Reviews</p>
+        </div>
+
+        <div class="pyramid-section">
+            <div class="pyramid-container">
+                <div class="pyramid-level level-1" data-level="style">
+                    Code Style & Formatting
+                </div>
+                <div class="pyramid-level level-2" data-level="tests">
+                    Tests & Coverage
+                </div>
+                <div class="pyramid-level level-3" data-level="documentation">
+                    Documentation & Comments
+                </div>
+                <div class="pyramid-level level-4" data-level="implementation">
+                    Implementation Logic
+                </div>
+                <div class="pyramid-level level-5" data-level="architecture">
+                    Architecture & Design
+                </div>
+
+                <!--<div class="automation-indicators">
+                    <div class="human-focus">
+                        👁️ Human Focus<br>
+                        <small>Requires human judgment</small>
+                    </div>
+                    <div class="automation-ready">
+                        🤖 Automation Ready<br>
+                        <small>Can be automated</small>
+                    </div>
+                </div> -->
+            </div>
+            <br><br><br><br
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #FF6B6B;"></div>
+                    <span>Low Priority - Automate here</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #4CAF50;"></div>
+                    <span>Medium Priority - Partially Automatable</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #FFEAA7;"></div>
+                    <span>High Priority - Human Review</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="practices-section">
+            <h2 style="text-align: center; margin-bottom: 30px; color: #333;">📋 Coding Practices Reference</h2>
+            <table class="practices-table">
+                <thead>
+                    <tr>
+                        <th>Coding Practice</th>
+                        <th>Description</th>
+                        <th>Example</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="practice-category">
+                        <td colspan="3">🔧 FUNCTIONALITY</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Input Validation</strong></td>
+                        <td>Always validate and sanitize user inputs to prevent injection attacks and ensure data integrity</td>
+                        <td><div class="code-example">// Good<br>if (!email || !isValidEmail(email)) {<br>&nbsp;&nbsp;throw new ValidationError('Invalid email');<br>}</div></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Error Handling</strong></td>
+                        <td>Implement comprehensive error handling with meaningful messages and proper logging</td>
+                        <td><div class="code-example">try {<br>&nbsp;&nbsp;await processPayment(data);<br>} catch (error) {<br>&nbsp;&nbsp;logger.error('Payment failed', { userId, error });<br>&nbsp;&nbsp;throw new PaymentError('Payment processing failed');<br>}</div></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Null Safety</strong></td>
+                        <td>Always check for null/undefined values before accessing properties or methods</td>
+                        <td><div class="code-example">// Good<br>const name = user?.profile?.name ?? 'Unknown';</div></td>
+                    </tr>
+
+                    <tr class="practice-category">
+                        <td colspan="3">⚡ MULTI-THREADING & PARALLELISM</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Thread Pool Usage</strong></td>
+                        <td>Use thread pools instead of creating threads manually to manage resource usage</td>
+                        <td><div class="code-example">const pool = new WorkerPool(4);<br>const result = await pool.execute(heavyTask, data);</div></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Race Condition Prevention</strong></td>
+                        <td>Use proper synchronization mechanisms to prevent race conditions</td>
+                        <td><div class="code-example">const mutex = new Mutex();<br>await mutex.runExclusive(async () => {<br>&nbsp;&nbsp;// Critical section<br>});</div></td>
+                    </tr>
+
+                    <tr class="practice-category">
+                        <td colspan="3">🔄 CONCURRENCY</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Promise Management</strong></td>
+                        <td>Properly handle concurrent operations with Promise.all() or Promise.allSettled()</td>
+                        <td><div class="code-example">const results = await Promise.allSettled([<br>&nbsp;&nbsp;fetchUser(id1),<br>&nbsp;&nbsp;fetchUser(id2)<br>]);</div></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Deadlock Prevention</strong></td>
+                        <td>Always acquire locks in the same order and use timeouts</td>
+                        <td><div class="code-example">// Always acquire locks in alphabetical order<br>await acquireLocks(['lockA', 'lockB']);</div></td>
+                    </tr>
+
+                    <tr class="practice-category">
+                        <td colspan="3">🗄️ DATABASE QUERIES</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Query Optimization</strong></td>
+                        <td>Use indexes, avoid N+1 queries, and optimize JOIN operations</td>
+                        <td><div class="code-example">// Good - Single query with JOIN<br>SELECT u.*, p.* FROM users u<br>LEFT JOIN profiles p ON u.id = p.user_id<br>WHERE u.active = true;</div></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Parameterized Queries</strong></td>
+                        <td>Always use parameterized queries to prevent SQL injection</td>
+                        <td><div class="code-example">// Good<br>const user = await db.query(<br>&nbsp;&nbsp;'SELECT * FROM users WHERE id = $1',<br>&nbsp;&nbsp;[userId]<br>);</div></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Connection Pooling</strong></td>
+                        <td>Use connection pools to manage database connections efficiently</td>
+                        <td><div class="code-example">const pool = new Pool({<br>&nbsp;&nbsp;host: 'localhost',<br>&nbsp;&nbsp;database: 'mydb',<br>&nbsp;&nbsp;max: 20,<br>&nbsp;&nbsp;idleTimeoutMillis: 30000<br>});</div></td>
+                    </tr>
+
+                    <tr class="practice-category">
+                        <td colspan="3">🔗 DATABASE ASSOCIATIONS (PostgreSQL)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Eager Loading</strong></td>
+                        <td>Load related data upfront when you know you'll need it</td>
+                        <td><div class="code-example">// Sequelize example<br>const users = await User.findAll({<br>&nbsp;&nbsp;include: [Profile, Orders]<br>});</div></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Lazy Loading</strong></td>
+                        <td>Load related data only when accessed to improve initial query performance</td>
+                        <td><div class="code-example">// Load orders only when needed<br>const orders = await user.getOrders();</div></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Batch Loading</strong></td>
+                        <td>Use DataLoader pattern to batch multiple queries into single requests</td>
+                        <td><div class="code-example">const userLoader = new DataLoader(<br>&nbsp;&nbsp;async (ids) => await User.findByIds(ids)<br>);</div></td>
+                    </tr>
+
+                    <tr class="practice-category">
+                        <td colspan="3">🔒 SECURITY BEST PRACTICES</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Authentication</strong></td>
+                        <td>Implement secure authentication with proper session management</td>
+                        <td><div class="code-example">// JWT with proper expiration<br>const token = jwt.sign(payload, secret, {<br>&nbsp;&nbsp;expiresIn: '1h',<br>&nbsp;&nbsp;issuer: 'myapp'<br>});</div></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Data Encryption</strong></td>
+                        <td>Encrypt sensitive data at rest and in transit</td>
+                        <td><div class="code-example">const encrypted = crypto.encrypt(sensitiveData, key);<br>// Store encrypted, never plain text</div></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Rate Limiting</strong></td>
+                        <td>Implement rate limiting to prevent abuse</td>
+                        <td><div class="code-example">app.use('/api/', rateLimit({<br>&nbsp;&nbsp;windowMs: 15 * 60 * 1000,<br>&nbsp;&nbsp;max: 100<br>}));</div></td>
+                    </tr>
+
+                    <tr class="practice-category">
+                        <td colspan="3">⚡ CACHING</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cache Strategy</strong></td>
+                        <td>Implement appropriate caching strategy (Redis, in-memory, CDN)</td>
+                        <td><div class="code-example">// Cache expensive computations<br>const result = await cache.get(key) ||<br>&nbsp;&nbsp;await cache.set(key, expensiveOperation(), 3600);</div></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cache Invalidation</strong></td>
+                        <td>Implement proper cache invalidation strategies</td>
+                        <td><div class="code-example">// Invalidate cache on data updates<br>await updateUser(id, data);<br>await cache.del(`user:${id}`);</div></td>
+                    </tr>
+
+                    <tr class="practice-category">
+                        <td colspan="3">🔧 CONFIGURATION MANAGEMENT</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Environment Variables</strong></td>
+                        <td>Use environment variables for configuration, never hardcode secrets</td>
+                        <td><div class="code-example">const config = {<br>&nbsp;&nbsp;dbUrl: process.env.DATABASE_URL,<br>&nbsp;&nbsp;apiKey: process.env.API_KEY<br>};</div></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Configuration Validation</strong></td>
+                        <td>Validate configuration at startup to fail fast</td>
+                        <td><div class="code-example">if (!process.env.DATABASE_URL) {<br>&nbsp;&nbsp;throw new Error('DATABASE_URL required');<br>}</div></td>
+                    </tr>
+
+                    <tr class="practice-category">
+                        <td colspan="3">📊 PERFORMANCE & MONITORING</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Logging</strong></td>
+                        <td>Implement structured logging with appropriate log levels</td>
+                        <td><div class="code-example">logger.info('User login', {<br>&nbsp;&nbsp;userId,<br>&nbsp;&nbsp;timestamp: new Date(),<br>&nbsp;&nbsp;ip: req.ip<br>});</div></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Metrics Collection</strong></td>
+                        <td>Collect performance metrics and set up monitoring</td>
+                        <td><div class="code-example">const timer = performance.now();<br>await operation();<br>metrics.histogram('operation.duration',<br>&nbsp;&nbsp;performance.now() - timer);</div></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="details-panel" id="detailsPanel">
+        <button class="close-panel" onclick="closePanel()">×</button>
+        <div id="panelContent"></div>
+    </div>
+
+    <script>
+        const levelDetails = {
+            style: {
+                title: "Code Style & Formatting",
+                automation: "🤖 Highly Automatable",
+                priority: "Low Priority - Automate First",
+                description: "Visual consistency and code formatting standards",
+                checkpoints: [
+                    "Consistent indentation and spacing",
+                    "Naming conventions (camelCase, PascalCase, etc.)",
+                    "Line length limits",
+                    "Import/export organization",
+                    "Consistent bracket placement",
+                    "Trailing commas, semicolons",
+                    "Code formatting (Prettier, ESLint)"
+                ],
+                automation_tools: [
+                    "Prettier for code formatting",
+                    "ESLint for style rules",
+                    "SonarQube for code smells",
+                    "Pre-commit hooks",
+                    "IDE formatters"
+                ]
+            },
+            tests: {
+                title: "Tests & Coverage",
+                automation: "🤖 Highly Automatable",
+                priority: "Low Priority - Automate First",
+                description: "Test quality, coverage, and effectiveness",
+                checkpoints: [
+                    "Test coverage percentage (aim for 80%+)",
+                    "Unit tests for core functionality",
+                    "Integration tests for APIs",
+                    "Edge case testing",
+                    "Mock usage appropriateness",
+                    "Test naming conventions",
+                    "Performance tests for critical paths"
+                ],
+                human_focus: [
+                    "Test logic correctness",
+                    "Test case completeness",
+                    "Mock strategy evaluation",
+                    "Integration test scenarios"
+                ],
+                automation_tools: [
+                    "Jest/Mocha for test running",
+                    "Coverage tools (Istanbul, NYC)",
+                    "Mutation testing tools",
+                    "Performance testing frameworks"
+                ]
+            },
+            documentation: {
+                title: "Documentation & Comments",
+                automation: "🔄 Partially Automatable",
+                priority: "Medium Priority - Human Judgment Required",
+                description: "Code documentation, comments, and API docs",
+                checkpoints: [
+                    "README completeness and accuracy",
+                    "API documentation (OpenAPI/Swagger)",
+                    "Inline comments for complex logic",
+                    "Function/class documentation",
+                    "Architecture decision records (ADRs)",
+                    "Deployment and setup instructions",
+                    "Code comment quality and necessity"
+                ],
+                human_focus: [
+                    "Documentation clarity and usefulness",
+                    "Comment necessity and accuracy",
+                    "API documentation completeness",
+                    "Architecture explanation quality"
+                ],
+                automation_tools: [
+                    "JSDoc/TypeDoc generation",
+                    "Swagger/OpenAPI validation",
+                    "Documentation linting",
+                    "Comment coverage tools"
+                ]
+            },
+            implementation: {
+                title: "Implementation Logic",
+                automation: "👁️ Requires Human Review",
+                priority: "High Priority - Human Expertise Essential",
+                description: "Business logic, algorithms, and implementation correctness",
+                checkpoints: [
+                    "Business logic correctness",
+                    "Algorithm efficiency and optimization",
+                    "Error handling completeness",
+                    "Edge case handling",
+                    "Security vulnerabilities",
+                    "Performance implications",
+                    "Database query optimization",
+                    "Concurrency and thread safety",
+                    "Memory management",
+                    "Resource cleanup"
+                ],
+                human_focus: [
+                    "Logic correctness review",
+                    "Security vulnerability assessment",
+                    "Performance impact analysis",
+                    "Error handling strategy",
+                    "Algorithm efficiency evaluation"
+                ],
+                automation_tools: [
+                    "Static analysis tools (SonarQube)",
+                    "Security scanners (Snyk, OWASP)",
+                    "Performance profilers",
+                    "Linting tools for common issues"
+                ]
+            },
+            architecture: {
+                title: "Architecture & Design",
+                automation: "👁️ Requires Human Review",
+                priority: "Highest Priority - Strategic Decisions",
+                description: "System design, patterns, and architectural decisions",
+                checkpoints: [
+                    "Design pattern appropriateness",
+                    "SOLID principles adherence",
+                    "Separation of concerns",
+                    "Dependency management",
+                    "Scalability considerations",
+                    "Maintainability and extensibility",
+                    "API design consistency",
+                    "Database schema design",
+                    "Caching strategy",
+                    "Configuration management",
+                    "Error handling strategy",
+                    "Security architecture"
+                ],
+                human_focus: [
+                    "Architectural decision evaluation",
+                    "Design pattern selection",
+                    "Scalability planning",
+                    "Long-term maintainability",
+                    "System integration approach"
+                ],
+                automation_tools: [
+                    "Dependency analysis tools",
+                    "Architecture compliance checkers",
+                    "Code complexity analyzers",
+                    "Design pattern detection tools"
+                ]
+            }
+        };
+
+        function showDetails(level) {
+            const details = levelDetails[level];
+            const panel = document.getElementById('detailsPanel');
+            const content = document.getElementById('panelContent');
+            
+            let humanFocusSection = '';
+            if (details.human_focus) {
+                humanFocusSection = `
+                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px;">
+                        <h4 style="color: #856404; margin-bottom: 10px;">👁️ Human Focus Areas</h4>
+                        <ul style="color: #856404;">
+                            ${details.human_focus.map(item => `<li>${item}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            content.innerHTML = `
+                <h2 style="color: #333; margin-bottom: 20px;">${details.title}</h2>
+                <div style="background: #e8f5e8; border-left: 4px solid #4CAF50; padding: 15px; margin: 20px 0; border-radius: 5px;">
+                    <strong>${details.automation}</strong><br>
+                    <em>${details.priority}</em>
+                </div>
+                <p style="margin-bottom: 20px; color: #666;">${details.description}</p>
+                
+                <h3 style="color: #333; margin: 20px 0 10px 0;">✅ Review Checkpoints</h3>
+                <ul style="line-height: 1.6;">
+                    ${details.checkpoints.map(item => `<li>${item}</li>`).join('')}
+                </ul>
+                
+                ${humanFocusSection}
+                
+                <div style="background: #f8f9fa; border-left: 4px solid #6c757d; padding: 15px; margin: 20px 0; border-radius: 5px;">
+                    <h4 style="color: #495057; margin-bottom: 10px;">🤖 Automation Tools</h4>
+                    <ul style="color: #495057;">
+                        ${details.automation_tools.map(item => `<li>${item}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+            
+            panel.classList.add('active');
+        }
+
+        function closePanel() {
+            document.getElementById('detailsPanel').classList.remove('active');
+        }
+
+        // Add click handlers to pyramid levels
+        document.querySelectorAll('.pyramid-level').forEach(level => {
+            level.addEventListener('click', function() {
+                const levelType = this.getAttribute('data-level');
+                showDetails(levelType);
+            });
+        });
+
+        // Close panel when clicking outside
+        document.addEventListener('click', function(e) {
+            const panel = document.getElementById('detailsPanel');
+            const pyramidLevels = document.querySelectorAll('.pyramid-level');
+            
+            if (!panel.contains(e.target) && ![...pyramidLevels].some(level => level.contains(e.target))) {
+                closePanel();
+            }
+        });
+    </script>
+</body>
+</html>
